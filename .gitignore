@@ -8,6 +8,10 @@ data/*
 results/*
 !results/.gitkeep
 
+# Ignore tables
+tables/*
+!tables/.gitkeep
+
 # Ignore figures
 figures/*
 !figures/.gitkeep
