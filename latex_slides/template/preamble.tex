@@ -1,0 +1,133 @@
+\usepackage{helvet}
+\usepackage[english]{babel}
+\usepackage{pgfplots}
+\usepackage{pgf}
+\pgfplotsset{compat=newest}
+\usepackage{booktabs}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lipsum}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{pifont}   % for \ding symbols
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{float}
+%\usepackage{gensymb}
+\usepackage{lmodern}
+\usepackage{bm}
+\usepackage{siunitx}
+\usepackage{multicol}
+\usepackage{media9}
+\usepackage{animate}
+\usepackage{longtable}
+\usepackage{pgffor}
+\usepackage{hyperref}
+%\usepackage{enumitem}
+\usepackage{dsfont}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[version=4]{mhchem}
+\usepackage{chemplants}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta, calc}
+\usepackage{nomencl} % Include the nomenclature package
+\usepackage{csquotes}       % For biblatex with babel
+\usepackage[backend=biber,sorting = none]{biblatex} % Package for bibliography (citing)
+\bibliography{bibliography.bib}
+
+\definecolor{limegreen}{RGB}{153, 255, 51}
+
+% Nomenclature
+\makenomenclature % Create the command to produce the nomenclature
+\renewcommand{\nomgroup}[1]{%
+  \ifthenelse{\equal{#1}{A}}{\item[\textbf{Variables}]}{%
+  \ifthenelse{\equal{#1}{B}}{\item[\textbf{Greek letters}]}{%
+  \ifthenelse{\equal{#1}{C}}{\item[\textbf{Sub- and superscripts}]}{%
+  \ifthenelse{\equal{#1}{D}}{\item[\textbf{QuickFix}]}}}}}
+
+
+\input{template/settings}
+
+\newcommand{\setcolor}[1]{\def\chosencolor{#1}}
+\newcommand{\setdepartment}[1]{\def\department{#1}}
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,inner sep=0.6pt,fill = blue] (char) {\color{white}\scriptsize #1};}}
+
+\usetheme{DTU}
+\setbeamersize{text margin left=5mm}
+\def\insertframetitle{}
+
+\newcommand{\inserttitlepage}{
+    \begin{frame}[plain, noframenumbering]{}
+
+        \begin{center}
+        \hspace{-3.6em}
+            \includegraphics[width = 0.25\paperwidth]{logos/\targetcolourmodel/white.pdf}
+        \end{center}
+        
+    \end{frame}
+
+    \begin{frame}[plain]{}
+        \color{white}\maketitle    
+    \end{frame}
+
+    \setbeamercolor{background canvas}{bg = white}
+}
+
+\usepackage{listings}  			% Placer kildekode i dokumentet med 
+% ¤¤ Opsaetning af listings ¤¤ %
+\definecolor{commentGreen}{RGB}{34,139,24}
+\definecolor{stringPurple}{RGB}{208,76,239}
+
+\lstset{language=Matlab,					% Sprog
+	basicstyle=\ttfamily\tiny,		% Opsaetning af teksten
+	keywords={for,if,while,else,elseif,		% Noegleord at fremhaeve
+			  end,break,return,case,
+			  switch,function},
+	keywordstyle=\color{blue},				% Opsaetning af noegleord
+	commentstyle=\color{commentGreen},		% Opsaetning af kommentarer
+	stringstyle=\color{stringPurple},		% Opsaetning af strenge
+	showstringspaces=false,					% Mellemrum i strenge enten vist eller blanke
+	numbers=left, numberstyle=\tiny,		% Linjenumre
+	extendedchars=true, 					% Tillader specielle karakterer
+	columns=flexible,						% Kolonnejustering
+	breaklines, breakatwhitespace=true,		% Bryd lange linjer
+	literate=														%Muliggør æ,ø,å
+	{á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+	{Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+	{à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+	{À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+	{ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+	{Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+	{â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+	{Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+	{œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+	{ű}{{\H{u}}}1 {Ű}{{\H{U}}}1 {ő}{{\H{o}}}1 {Ő}{{\H{O}}}1
+	{ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+	{€}{{\euro}}1 {£}{{\pounds}}1 {«}{{\guillemotleft}}1
+	{»}{{\guillemotright}}1 {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1,
+	backgroundcolor=\color{white},	%Baggrundsfarve
+	captionpos=t
+}
+\renewcommand{\lstlistingname}{Matlab code}% Listing -> Matlab code
+
+
+\AtBeginSection[]{
+  \begin{frame}{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% \hypersetup{
+%   colorlinks=true,
+%   linkcolor=blue,
+%   urlcolor=blue
+% }
+
+% Colors
+ \definecolor{LimeGreen}{RGB}{38, 255, 75} 
+
+
+\input{template/new_commands}

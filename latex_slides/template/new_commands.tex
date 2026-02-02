@@ -1,0 +1,224 @@
+\newcommand{\deriv}[2]{\frac{\partial #1}{\partial #2}}
+
+\newcommand{\sectionnew}[1]{\section{#1} \frame{\tableofcontents[currentsection]}}
+
+\newcommand{\onlybm}[3]{\only<#2>{\boldsymbol{#1}}\only<#3>{#1}}
+
+\newcommand{\pcite}[1]{(\cite{#1})}
+
+% Coloring box for outputs/states/inputs
+\newcommand{\mycolorbox}[4]{%
+    % #1 = text
+    % #2 = color
+    % #3 = x coordinate
+    % #4 = y coordinate
+    \node[rectangle, 
+        fill=#2!50, 
+        opacity=0.5, 
+        minimum width=6.5cm, 
+        minimum height=1.8cm, 
+        align=center
+    ] at (#3,#4) {}; % background rectangle
+
+    \node[rectangle, 
+        fill=#2, 
+        opacity=1, 
+        text opacity=1, 
+        align=center
+    ] at (#3,#4) {#1}; % foreground text
+}
+
+
+
+\newcommand{\showTestPlotTrainNineTen}[4]{
+\begin{frame}{Model selection}
+\footnotesize{
+\begin{table}
+ \centering
+    \caption{Model evaluation and model test. Training data: Dataset 9-10}
+\begin{tikzpicture}
+    \node[inner sep=0pt] (tab) {\input{tables/RMSE_train_9_10.txt}};
+    \node[rectangle,
+    draw,
+    very thick,
+    minimum width = 1cm, 
+    minimum height = 0.35 cm] at (#3,#4) {};    
+\end{tikzpicture}
+\end{table}
+}
+\end{frame}
+
+\begin{frame}{Model selection}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/results/full_hor_model_#1_train_9_10_test_#2.pdf}
+    \caption{Full  horizon prediction. Model #1, test dataset #2, training dataset 9-10}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Model selection}
+\footnotesize{
+\begin{table}
+ \centering
+    \caption{Model evaluation and model test. Training data: Dataset 9-10}
+\begin{tikzpicture}
+    \node[inner sep=0pt] (tab) {\input{tables/RMSE_train_9_10.txt}};
+    \node[rectangle,
+    draw,
+    very thick,
+    minimum width = 1cm, 
+    minimum height = 0.35 cm] at (#3,#4) {};    
+\end{tikzpicture}
+\end{table}
+}
+\end{frame}
+
+}
+
+
+
+
+
+
+\newcommand{\showTestPlotTrainElevenThirteen}[4]{
+\begin{frame}{Model selection}
+\footnotesize{
+\begin{table}
+ \centering
+    \caption{Model evaluation and model test. Training data: Dataset 11-13}
+\begin{tikzpicture}
+    \node[inner sep=0pt] (tab) {\input{tables/RMSE_train_11_12_13.txt}};
+    \node[rectangle,
+    draw,
+    very thick,
+    minimum width = 1cm, 
+    minimum height = 0.35 cm] at (#3,#4) {};    
+\end{tikzpicture}
+\end{table}
+}
+\end{frame}
+
+\begin{frame}{Model selection}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/results/full_hor_model_#1_train_11_12_13_test_#2.pdf}
+    \caption{Full  horizon prediction. Model #1, test dataset #2, training dataset 11-13}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Model selection}
+\footnotesize{
+\begin{table}
+ \centering
+    \caption{Model evaluation and model test. Training data: Dataset 11-13}
+\begin{tikzpicture}
+    \node[inner sep=0pt] (tab) {\input{tables/RMSE_train_11_12_13.txt}};
+    \node[rectangle,
+    draw,
+    very thick,
+    minimum width = 1cm, 
+    minimum height = 0.35 cm] at (#3,#4) {};    
+\end{tikzpicture}
+\end{table}
+}
+\end{frame}
+
+}
+
+\newcommand{\inserttables}[3]{%
+  \foreach \i in {1,...,#2} {
+    \begin{frame}{#3}
+    \scriptsize{
+      \begin{table}[]
+        \centering
+        \input{tables/par_est_\i_#1.txt}
+      \end{table}
+    }
+    \end{frame}
+  }
+  \begin{frame}{#3}
+  \scriptsize{
+    \begin{table}[]
+      \centering
+      \input{tables/RMSE_#1.txt}
+    \end{table}
+  }
+  \end{frame}
+}
+
+\newcommand{\inserttablesnew}[4]{%
+  \foreach \i in {1,...,#2} {
+    \begin{frame}{#4}
+    \scriptsize{
+    Parameter estimate
+      \begin{table}[]
+        \centering
+        \input{tables/par_est_\i_#1.txt}
+      \end{table}
+    }
+    \end{frame}
+  }
+  \foreach \i in {1,...,#3} {
+      \begin{frame}{#4}
+      \scriptsize{  
+      RMSE
+        \begin{table}[]
+          \centering
+          \input{tables/RMSE_#1_\i.txt}
+        \end{table}
+      }
+      \end{frame}
+  }
+}
+
+
+\newcommand{\drawsprinkler}[3]{
+    % Base horizontal line
+    \draw[] ([yshift=#2]#1) -- ([xshift=#312mm,yshift=#2]#1);
+
+    % Central sprinkle group
+    \draw[] ([xshift=#37mm,yshift=#2]#1) -- ([xshift=#37mm,yshift=-1mm+#2]#1);
+    \draw[] ([xshift=#37mm,yshift=#2]#1) -- ([xshift=#36.5mm,yshift=-0.8mm+#2]#1);
+    \draw[] ([xshift=#37mm,yshift=#2]#1) -- ([xshift=#37.5mm,yshift=-0.8mm+#2]#1);
+
+    % First new sprinkle group
+    \draw[] ([xshift=#34mm,yshift=#2]#1) -- ([xshift=#34mm,yshift=-1mm+#2]#1);
+    \draw[] ([xshift=#34mm,yshift=#2]#1) -- ([xshift=#33.5mm,yshift=-0.8mm+#2]#1);
+    \draw[] ([xshift=#34mm,yshift=#2]#1) -- ([xshift=#34.5mm,yshift=-0.8mm+#2]#1);
+
+    % Second new sprinkle group
+    \draw[] ([xshift=#310mm,yshift=#2]#1) -- ([xshift=#310mm,yshift=-1mm+#2]#1);
+    \draw[] ([xshift=#310mm,yshift=#2]#1) -- ([xshift=#39.5mm,yshift=-0.8mm+#2]#1);
+    \draw[] ([xshift=#310mm,yshift=#2]#1) -- ([xshift=#310.5mm,yshift=-0.8mm+#2]#1);
+}
+
+\newcommand{\drawPumpTriangle}[2]{%
+  \ifthenelse{\equal{#2}{right}}{%
+    \draw[] (#1.0) -- (#1.125) -- (#1.235) -- cycle;%
+  }{}%
+  \ifthenelse{\equal{#2}{left}}{%
+    \draw[] (#1.180) -- (#1.55) -- (#1.305) -- cycle;%
+  }{}%
+  \ifthenelse{\equal{#2}{up}}{%
+    \draw[] (#1.90) -- (#1.215) -- (#1.325) -- cycle;%
+  }{}%
+  \ifthenelse{\equal{#2}{down}}{%
+    \draw[] (#1.270) -- (#1.35) -- (#1.145) -- cycle;%
+  }{}%
+}
+
+
+\newcommand{\kparams}[5]{%
+  \textcolor{#1}{$k_{A,cga}$} \,
+  \textcolor{#2}{$k_{A,cla}$} \,
+  \textcolor{#3}{$k_{A,Ta}$} \,
+  \textcolor{#4}{$k_{D,cld}$} \,
+  \textcolor{#5}{$k_{D,Td}$}%
+}
+
+
+
+% Macro to insert metrics
+\newcommand{\insertmetrics}[1]{%
+  \csname metrics@#1\endcsname
+}

@@ -1,0 +1,42 @@
+# Git ignore file
+
+# Ignore data files
+data/*
+!data/.gitkeep
+
+# Ignore results files
+results/*
+!results/.gitkeep
+
+# Ignore figures
+figures/*
+!figures/.gitkeep
+
+# Ignore old files
+old/*
+!old/.gitkeep
+
+
+# LateX
+
+# Ignore all main files
+latex_slides/main.pdf
+latex_slides/main.synctex.gz
+latex_slides/main.aux
+latex_slides/main.bbl
+latex_slides/main.log
+latex_slides/main.nav
+latex_slides/main.out
+latex_slides/main.snm
+latex_slides/main.toc
+latex_slides/main.fls
+latex_slides/main.fdb_latexmk
+latex_slides/main.bcf
+latex_slides/main.run.xml
+latex_slides/main.nlo
+latex_slides/latexmkrc
+
+# Ignore figures Latex folder
+latex_slides/figures/*
+
+latex_slides/template/logos/*
