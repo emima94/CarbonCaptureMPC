@@ -13,7 +13,7 @@ act_fun_string <- function(act_fun, input_expr) {
     }
 }
 
-create_ctsm_NN <- function(model, output_name, par_name, nn_settings) {
+create_ctsm_NN <- function(model, par_name, nn_settings) {
     
     # Check if nn_settings is valid
     if (is.null(nn_settings$input)) {
@@ -27,18 +27,21 @@ create_ctsm_NN <- function(model, output_name, par_name, nn_settings) {
     }
 
     # Extract neural network settings
-    input_names <- nn_settings$input
+    input_names <- nn_settings$input$names
+    input_means <- nn_settings$input$means
+    input_sds <- nn_settings$input$sds
+    output_name <- nn_settings$output$name
+    output_mean <- nn_settings$output$mean
+    output_sd <- nn_settings$output$sd
+
     no_neurons <- nn_settings$no_neurons
     no_hidden_layers <- if (is.na(no_neurons)) 0 else length(no_neurons)
     act_fun <- nn_settings$act_fun
-
-    message(sprintf("Creating NN for %s with %d hidden layers.", output_name, no_hidden_layers))
-
     
-    # Inputs
+    # Inputs to the neural network, with scaling
     for (i in seq_along(input_names)) {
         model$setAlgebraics(
-            as.formula(paste0("h", par_name, "0_", i, " ~ ", input_names[i])
+            as.formula(paste0("h", par_name, "0_", i, " ~ (", input_names[i], " - ", input_means[i], ") / ", input_sds[i])
                             )
         )
     }
@@ -120,11 +123,11 @@ create_ctsm_NN <- function(model, output_name, par_name, nn_settings) {
     args[[pname]] <- vec
     do.call(model$setParameter, args)
 
-    ## Final output assignment
+    ## Final output assignment, with re-scaling
     model$setAlgebraics(
         as.formula(
             paste0(
-                output_name, " ~ z", par_name, i + 1, "_1"
+                output_name, " ~ (z", par_name, i + 1, "_1 * ", output_sd, ") + ", output_mean
             )
         )
     )
