@@ -1,0 +1,12 @@
+% Scenario 1: Reference control on yga, with step changes in reference and in ygina or Fgina. 
+% MVs: F, Q
+% Objective: phi = (yga_ref - yga)^2 + lambda_F * dF + lambda_Q * dQ
+% 
+% Scenario 2: EMPC. Varying electricity price and CO2 price. 
+% MVs: F, Q
+% Objective: phi = electricity_price * Q - CO2_price * Na + lambda_F * dF + lambda_Q * dQ
+%
+% Solve OCPs with single shooting.
+% Import nn_settings and par_star from R to Julia. 
+% Make Julia functions to construct the system equations, based on nn_settings and par_star.
+
