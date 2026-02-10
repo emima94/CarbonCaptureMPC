@@ -1,54 +1,47 @@
 # Load pkgs
 using CSV, DataFrames, JSON
 
+includet("../src/util.jl")
+includet("../src/model.jl")
 
 # Read parameter estimates from R
 par_estimates = CSV.read("results/parameter_estimates_Tiller.csv", DataFrame)
 par_fixed = CSV.read("results/parameter_fixed_Tiller.csv", DataFrame)
-
-par_est_nt = (; [Symbol(row.Column1) => row.x for row in eachrow(par_estimates)]...)
-par_fixed_nt = (; [Symbol(row.Column1) => row.x for row in eachrow(par_fixed)]...)
-
-par_nt = (; par_fixed_nt..., par_est_nt...)
-
-# Estimated parameters
-par_est_nt = (; [Symbol(row.Column1) => row.x for row in eachrow(par_estimates)]...)
 # Read JSON file
 nn_settings = JSON.parsefile("results/nn_settings_Tiller.json")
 
-# Access values
-nn_settings["Na"]["input"]["names"]  # ["ca"]
-nn_settings["Nd"]["input"]["means"]  # [2.6042461, 0.3707650, ...]
+# Convert to NamedTuple for easier access
+par_estimates_nt = (; [Symbol(row.Column1) => row.x for row in eachrow(par_estimates)]...)
+par_fixed_nt = (; [Symbol(row.Column1) => row.x for row in eachrow(par_fixed)]...)
 
-# Define system equations
-function system_equations!(dx, x, u, p, nn_settings, include_intermediate_storage, t)
-    
-    # Extract states
-    ca = x[1]  
-    cd = x[2]
-    if include_intermediate_storage
-        ct = x[3]  # Intermediate storage state
-    end
+# Extract NN parameters
+n_neurons_A = [1, 1]
+n_neurons_D = [4, 8, 1]
 
-    # Extract inputs
-    F = u[1]  # Inlet flow rate
-    P_reb = u[2]  # Reboiler duty
-    cgina = u[3]  # Inlet gas CO2 concentration
-    Fgina = u[4]  # Inlet gas flow rate
+NA_params = extract_NN_params(par_estimates, "a", n_neurons_A, nn_settings["Na"])
+ND_params = extract_NN_params(par_estimates, "d", n_neurons_D, nn_settings["Nd"])
 
-    # Extract parameters
+# Extract other parameters
+s = (sa = par_estimates_nt.sa, sd = par_fixed_nt.sd, st = par_fixed_nt.st, s_yga = par_fixed_nt.s_yga)
+V = (Va = par_fixed_nt.Va, Vd = par_fixed_nt.Vd, Vt = par_fixed_nt.Vt)
 
+# Define input and disturbance tuples for testing
+u = (F = 1.0, Q = 2.0)
+d = (cgina = 1.0, Fgina = 2.0)
+# Define parameter tuple
+theta = (NA_params = NA_params, ND_params = ND_params, s = s, V = V)
+# Complete parameter tuple
+p = (u = u, d = d, theta = theta)
 
-    
-    # Define equations 
-    if include_intermediate_storage
-        dx[1] = (F * (ct - ca) + Na) / Va
-        dx[2] = (F * (ca - cd) - Nd) / Vd
-        dx[3] = F * (cd - ct) / Vt
-    else
-        dx[1] = (F * (cd - ca) + Na) / Va
-        dx[2] = (F * (ca - cd) - Nd) / Vd
-    end
+# Update p (by creating a new p, since p is immutable) (testing)
+F_new = 7.0
+u_new = (; p.u..., F = F_new)
+p = (; p..., u = u_new)
+p
 
-
-end
+# Test system equations
+x = [2.5, 0.2, 0.2]
+t = 0.0
+dx = zeros(3)
+system_equations!(dx, x, p, t)
+dx
