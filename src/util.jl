@@ -37,13 +37,50 @@ function evaluate_NN(NN_params, z0)
 
     z0_normalized = (z0 .- mu_input) ./ sigma_input
 
+    layer = 0
     z = z0_normalized
-    for i in 1:(length(NN_params)-2) # Exclude input and output
-        W = NN_params[Symbol("layer_", i)].W
-        b = NN_params[Symbol("layer_", i)].b
+    for i in 1:(length(NN_params)-3) # Exclude input and output and output layer
+        layer += 1
+        W = NN_params[Symbol("layer_", layer)].W
+        b = NN_params[Symbol("layer_", layer)].b
         z = tanh.(W * z + b)
     end
 
+    # Output layer
+    W = NN_params[Symbol("layer_", layer+1)].W
+    b = NN_params[Symbol("layer_", layer+1)].b
+    z = W * z + b
+
+    # Re-scale output
     z_output = z .* sigma_output .+ mu_output
+
     return z_output
+end
+
+
+function get_inputs_and_disturbances(cgina_val, Fgina_val, F_val, Q_val, N)
+
+    cgina = repeat(cgina_val, inner=Int(N/length(cgina_val)))
+    Fgina = repeat(Fgina_val, inner=Int(N/length(Fgina_val)))
+    F = repeat(F_val, inner=Int(N/length(F_val)))
+    Q = repeat(Q_val, inner=Int(N/length(Q_val)))
+
+    D = hcat(cgina, Fgina)'
+    U = hcat(F, Q)'
+    return U, D
+end
+
+
+# Callback
+function callback(state, loss_val)
+    if state.iter % 10 == 0  # Print every 10 iterations
+        println("Iteration: $(state.iter), Loss: $(loss_val)")
+    end
+
+    if state.iter >= 500
+        println("Maximum iterations reached. Stopping optimization.")
+        return true  # Return true to stop optimization
+    else 
+        return false
+    end
 end
