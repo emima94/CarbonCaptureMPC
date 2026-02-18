@@ -9,4 +9,127 @@
 % Solve OCPs with single shooting.
 % Import nn_settings and par_star from R to Julia. 
 % Make Julia functions to construct the system equations, based on nn_settings and par_star.
+\section{MPC scenarios}
 
+\begin{frame}{MPC scenarios}
+    \begin{itemize}
+        \item Scenario 1: Reference control on \ce{CO2} capture efficiency, $\eta$.
+        \item Scenario 2: Economic MPC (EMPC) with varying electricity price.
+    \end{itemize}
+    \end{frame}
+
+    \begin{frame}{General optimal control problem (OCP) formulation}
+        \begin{columns}
+        
+            \column{0.5\textwidth}
+            \begin{align}
+                \min_{\{u_k\}_{k=0}^{N-1}} & \phi(t) \\
+                \text{s.t. } \quad  & x_0 = x(t_0), \\
+                &\dot{x}(t) = f(x(t), u(t), d(t), \theta), \\
+                & z(t) = h(x(t), u(t), d(t), \theta), \\
+                & u_k = u(t), t \in [t_k, t_{k+1}[, k = 0, \ldots, N-1, \\
+                & u_{min} \leq u_k \leq u_{max}, k = 0, \ldots, N-1.
+            \end{align}
+            \column{0.5\textwidth}
+            \begin{align*}
+                &N: &&\text{number of control intervals} \\
+                &t_0, t_f: &&\text{initial and final time}\\
+                &\phi(t): &&\text{objective function} \\
+                &x(t): &&\text{state trajectory} \\
+                &u(t): &&\text{control trajectory} \\
+                &d(t): &&\text{disturbance trajectory} \\
+                &z(t): &&\text{output trajectory} \\
+                &\theta: &&\text{model parameters} 
+            \end{align*}
+        \end{columns}
+    \end{frame}
+
+\begin{frame}{Scenario 1: Reference control}
+    \begin{columns}
+        \column{0.5\textwidth}
+
+        MVs: 
+        \\[2mm] 
+        ~ ~ - Solvent flow rate, $F$ [m$^3$/h].
+        \\[2mm] 
+        DVs: 
+        \\[2mm] 
+        ~ ~ - Inlet \ce{CO2} gas conc., $c^g_{in,a}$ [mol/m$^3$], \\
+        ~ ~ - Inlet gas flow rate, $F_{in,a}$ [m$^3$/h].
+        \\[2mm]
+        Outputs:
+        \\[2mm]
+        ~ ~ - \ce{CO2} capture efficiency, $\eta$ [\%].
+        \column{0.5\textwidth}
+        Objective:
+        \begin{align*}
+            \phi(t) = \int_{t_0}^{t_f} \left( (\eta(t) - \eta_{\text{ref}})^2 + \lambda_F \, dF \right) dt,
+        \end{align*}
+        
+
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Scenario 1A: Reference control w. changing inlet flue gas flow rate}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{../figures/MPC_scenario01A.pdf}
+        %\caption{MPC scenario 1A: reference control with step change in inlet flue gas flow rate.}
+    \end{figure}
+
+\end{frame}
+
+\begin{frame}{Scenario 1B: Reference control w. changing reboiler duty}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{../figures/MPC_scenario01B.pdf}
+        %\caption{MPC scenario 1B: reference control with step change in reboiler duty.}
+    \end{figure}
+
+\end{frame}
+
+\begin{frame}{Scenario 1C: Reference control w. changing reference and flue gas inlet \ce{CO2} concentration}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{../figures/MPC_scenario01C.pdf}
+        %\caption{MPC scenario 1C: reference control with step change in reboiler duty.}
+    \end{figure}
+
+\end{frame}
+
+
+\begin{frame}{Scenario 2: EMPC with varying electricity price}
+    \begin{columns}
+        \column{0.4\textwidth}
+
+        MVs: 
+        \\[2mm] 
+        ~ ~ - Solvent flow rate, $F$ [m$^3$/h], \\
+        ~ ~ - Reboiler duty, $Q$ [kW].
+        \\[2mm] 
+        DVs: 
+        \\[2mm] 
+        ~ ~ - Electricity price, $p_{el}$ [EUR/kWh],\\ 
+        ~ ~ - CO2 price, $p_{\ce{CO2}}$ [EUR/kg],\\
+        ~ ~ - Inlet \ce{CO2} gas conc., $c^g_{in,a}$ [mol/m$^3$], \\
+        ~ ~ - Inlet gas flow rate, $F_{in,a}$ [m$^3$/h].
+        \\[2mm]
+        Outputs:
+        \\[2mm]
+        ~ ~ - \ce{CO2} capture rate, $m_a$ [kg/h].
+        \column{0.6\textwidth}
+        Objective:
+        \begin{align*}
+            \phi(t) &= \int_{t_0}^{t_f} ( \overbrace{p_{el}(t) Q(t)}^{\textit{electricity costs}} - \overbrace{p_{\ce{CO2}}(t) m_a(t)}^{\textit{CO2 revenue}}
+            + \overbrace{\lambda_F \, dF + \lambda_Q \, dQ}^{\textit{input change}})\,dt \\ &\quad + \overbrace{\lambda_s s}^{\textit{slack var.}},
+        \end{align*}
+        Additional constraints:
+        \begin{align*}
+            & \dot M_a = m_a(t), \\
+            & \dot M_{in,a} = m_{in,a}(t), \\
+            & M_a(t_f) + s \geq \eta_{\text{min}} M_{in,a}(t_f), \\
+            &s \geq 0,
+        \end{align*}  
+        where $M_a$ and $M_{in,a}$ are the cumulative captured and inlet \ce{CO2} [kg], respectively, $\eta_{\text{min}}$ is the minimum required capture efficiency over the horizon, and $s$ is a slack variable to ensure feasibility.      
+    \end{columns}
+\end{frame}

@@ -26,7 +26,8 @@ sofun()
 ## ----------------------------------- ##
 
 df <- load_data_Tiller()
-
+# i <- 7
+# plot(df[[i]]$t, df[[i]]$cga, type = "l", col = "red", xlab = "Time (h)", ylab = "yga (%)", main = sprintf("Data series %d: yga", i))
 
 # Steady state data variables
 train_idxs <- 1:10  # Indices of training data series
@@ -122,9 +123,10 @@ incl_intermediate_storage <- TRUE
 train_idxs <- c(1,2,3,4,5,6,7,8,9,10)  # Indices of training data series
 method <- "laplace"
 ode_solver <- "rk4"
-ode_stepsize <- 10 / 3600  # 10 seconds
+ode_stepsize <- 5 / 3600  # 
 
 # Initial parameter guess and lower and upper bounds
+sofun()
 model <- create_ctsm_model(x0[[1]], P0, incl_intermediate_storage, nn_settings)
 
 
@@ -152,8 +154,8 @@ ss_sol <- nlminb(start = par,
 
 par_init_ss <- ss_sol$par
 
-
-#predict_and_plot(model, df, 2, par_init_ss, ode_solver, ode_stepsize)
+i <- 3
+predict_and_plot(model, df[[i]], par_init_ss, x0[[i]], P0, ode_solver, ode_stepsize)
 
 
 
@@ -184,8 +186,8 @@ fit <- nlminb(start = par_init_ss,
                 gradient = function(par) nll_gr(par, nll_fun_list),
                 lower = lb,
                 upper = ub,
-                control = list(eval.max = 1000, 
-                                iter.max = 1000,
+                control = list(eval.max = 10000, 
+                                iter.max = 10000,
                                 trace = 10)
                 )
 
@@ -201,9 +203,36 @@ write.csv(par_fixed, "results/parameter_fixed_Tiller.csv", row.names = TRUE)
 # Write nn_settings to json
 write_json(nn_settings, "results/nn_settings_Tiller.json", pretty = TRUE)
 
+
+
+
+# Evaluate NNs for slices of NN input space
+F <- seq(0.2, 0.45, length.out = 50)
+
+Nd_F <- sapply(F, function(F_i) {
+    df_input <- data.frame(ca = 2.63, cd = 0.5, F = F_i, Q = 28, cgina = NaN, Fgina = NaN)
+    evaluate_algebraics_simple(model, df_input, par_free = par_star)$Nd
+})
+Nd_F
+par(mfrow = c(1,1))
+plot(F, Nd_F, type = "l", xlab = "F", ylab = "Nd", main = "Estimated Nd vs F")
+Q <- seq(22,34, length.out = 50)
+Nd_Q <- sapply(Q, function(Q_i) {
+    df_input <- data.frame(ca = 2.63, cd = 0.4, F = 0.32, Q = Q_i, cgina = NaN, Fgina = NaN)
+    evaluate_algebraics_simple(model, df_input, par_free = par_star)$Nd
+})
+plot(Q, Nd_Q, type = "l", xlab = "Q", ylab = "Nd", main = "Estimated Nd vs Q")
+ca <- seq(2.0, 3.5, length.out = 50)
+Nd_ca <- sapply(ca, function(ca_i) {
+    df_input <- data.frame(ca = ca_i, cd = 0.4, F = 0.32, Q = 28, cgina = NaN, Fgina = NaN)
+    evaluate_algebraics_simple(model, df_input, par_free = par_star)$Nd
+})
+plot(ca, Nd_ca, type = "l", xlab = "ca", ylab = "Nd", main = "Estimated Nd vs ca")
+
+
 # Predict and plot after training
 sofun()
-i <- 5
+i <- 8
 pred <- predict_and_plot(model, df[[i]], par_star, x0[[i]], P0, ode_solver, ode_stepsize)
 
 # Plot data

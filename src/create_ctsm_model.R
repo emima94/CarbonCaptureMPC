@@ -17,7 +17,7 @@ create_ctsm_model <- function(x0, P0,
 
         model$setParameter(
             Vt = 0.17,
-            st = 0.005
+            st = 0.05
         )
 
     } else {
@@ -47,6 +47,7 @@ create_ctsm_model <- function(x0, P0,
         R ~ 8.314,
         Ta ~ 313.15,
         Pa ~ 101325
+        #Na ~ ka * (ca_star - ca)
     )
         
     # Insert neural network for Na
@@ -55,6 +56,7 @@ create_ctsm_model <- function(x0, P0,
         par_name = "a",
         nn_settings = nn_settings$Na
     )
+
     # Insert neural network for Nd
     model <- create_ctsm_NN(
         model = model,
@@ -69,10 +71,14 @@ create_ctsm_model <- function(x0, P0,
     )
 
     model$setParameter(
+        #ka = c(init = 2208, lb = 1e-5, ub = 1e5),
+        #ca_star = c(init = 2.904, lb = 0, ub = 10),
+        #ka = 2208,
+        #ca_star = 2.904,
         Va = 0.17,
         Vd = 0.17,
         sa = c(init = 0.05, lower = 0.00001, upper = 10),
-        sd = 0.1,
+        sd = 0.05,
         #sd = c(init = 0.05, lower = 0.00001, upper = 1),
         s_yga = 0.2
     )

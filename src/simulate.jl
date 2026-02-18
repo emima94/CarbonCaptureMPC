@@ -1,12 +1,14 @@
 function simulate_control_intervals(U, D, prob, t_vec)
     T = eltype(U)
 
-    nx = 3
+    x0 = prob.u0
+
+    nx = length(x0)
     nz = 4
 
     X = zeros(T, nx, length(t_vec))
     Z = zeros(T, nz, length(t_vec)-1) 
-    X[:,1] = prob.u0
+    X[:,1] = x0
     
     for i in 1:(length(t_vec)-1)
         # Update p with current interval's inputs and disturbances
@@ -37,7 +39,7 @@ function simulate_fine_grid(U, D, prob, t_vec, n_points_per_interval=10)
     
     n_total = (length(t_vec) - 1) * n_points_per_interval + 1
     X = zeros(T, nx, n_total)
-    Z = zeros(T, nz, n_total-1)
+    Z = zeros(T, nz, n_total - 1)
     t_fine = zeros(T, n_total)
     
     X[:,1] = prob.u0

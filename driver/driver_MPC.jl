@@ -5,8 +5,12 @@ Pkg.activate(".")
 
 using CSV, DataFrames, JSON, Revise
 using DifferentialEquations, DataInterpolations
+using Ipopt
+using DifferentiationInterface, ADTypes
 using Optimization, OptimizationOptimJL
 using Plots
+using LaTeXStrings
+default(fontfamily="times", titlefontsize = 12)
 
 using ForwardDiff, ADTypes
 
@@ -16,6 +20,7 @@ includet("../src/simulate.jl")
 includet("../src/loss_functions.jl")
 includet("../src/MPC.jl")
 includet("../src/MPC_scenarios.jl")
+includet("../src/plots.jl")
 
 # Read parameter estimates from R
 par_estimates = CSV.read("results/parameter_estimates_Tiller.csv", DataFrame)
@@ -46,6 +51,16 @@ theta = (NA_params = NA_params, ND_params = ND_params, s = s, V = V, out_allocat
 p = (u = (F = NaN, Q = NaN), d = (cgina = NaN, Fgina = NaN), theta = theta)
 
 
+## Cheack out ND vs Q_val
+Q_val = range(20,40, length=100)
+Nd_vals = [evaluate_NN(ND_params, [2.63, 0.3, 0.3, Q])[1] for Q in Q_val]
+plot(Q_val, Nd_vals, xlabel="Q", ylabel="Nd", title="Nd vs Q")
+F_val = range(0.2, 0.45, length=100)
+Nd_vals_F = [evaluate_NN(ND_params, [2.63, 0.3, F, 28])[1] for F in F_val]
+plot(F_val, Nd_vals_F, xlabel="F", ylabel="Nd", title="Nd vs F", ylims = (300,800))
+
+##
+
 # Simulation Time
 t0 = 0.0
 tf = 6.0
@@ -54,49 +69,42 @@ N = Int((tf - t0) / dt) # Number of control intervals
 t_vec = range(t0, tf, length=N+1)
 
 
-### Scenario 1 ###
-obj_scenario01, F0, lb, ub, sd1 = define_scenario01(t0, tf, p, N);
+## Ref. control scenarios ##
 
-# Test objective function
-obj_val = obj_scenario01(F0, p)
-println("Initial objective value: ", obj_val)
-
-# Solve OCP
-sol = solve_OCP(obj_scenario01, F0, lb, ub)
-
-# Simulate with optimized F values
-
-Usim = hcat(sol.u, sd1.U0[2,:])' # Combine optimized F with original Q
-Dsim = sd1.D0
-
-Xsim, Zsim, t_fine_sim = simulate_fine_grid(Usim, Dsim, sd1.prob, sd1.t_vec, 50)
-
-# Plot results
-function plot_results()
-    plt1 = plot(t_vec, vcat(sd1.cap_eff_ref[1], sd1.cap_eff_ref), seriestype=:steppre, linestyle=:dash, label="Reference", title="Capture efficiency", xlabel="Time (hr)", ylabel="Capture Efficiency (%)", ylims=(50,100))
-    plot!(plt1, t_fine_sim[2:end], Zsim[3,:], label="Cap eff.", title="Capture efficiency", xlabel="Time (hr)", ylabel="Capture Efficiency (%)", ylims=(50,100))
-
-    plt2 = plot(t_fine_sim[2:end], Zsim[1:2,:]', labels=["yga" "ygina"], title="Output Trajectories with Optimized F", xlabel="Time (hr)", ylabel="Concentration (vol%)", ylims = (-2,14))
-    plt3 = plot(t_fine_sim[2:end], Zsim[4,:], labels=["Na"],  title = "Capture rate", xlabel="Time (hr)", ylabel="Capture Rate (mol/hr)", ylims=(500,900))
-    plt4 = plot(t_fine_sim, Xsim', labels=["ca" "cd" "ct"], title="State Trajectories with Optimized F", xlabel="Time (hr)", ylabel="Concentration", ylims = (-1,5))
-    plt5 = plot(t_vec, vcat(Usim[1,1], Usim[1,:]), seriestype = :steppre, label="F", title="Optimized Control Input", xlabel="Time (hr)", ylabel="Flow Rate", ylims=(0.0,0.5))
-    plot!(plt5, t_vec, vcat(lb[1], lb), seriestype=:steppre, linestyle=:dash, label="Min F", color=:red)
-    plot!(plt5, t_vec, vcat(ub[1], ub), seriestype=:steppre, linestyle=:dash, label="Max F", color=:red)
-    plt6 = plot(t_vec, vcat(Usim[2,1], Usim[2,:]), seriestype = :steppre, label="Q", title="Optimized Control Input", xlabel="Time (hr)", ylabel="Flow Rate", ylims = (20,35))
-    plt7 = plot(t_vec, vcat(Dsim[1,1], Dsim[1,:]), seriestype = :steppre, label="cgina", title="Disturbance", xlabel="Time (hr)", ylabel="Concentration", ylims=(4,5))
-    plt8 = plot(t_vec, vcat(Dsim[2,1], Dsim[2,:]), seriestype = :steppre, label="Fgina", title="Disturbance", xlabel="Time (hr)", ylabel="Flow Rate", ylims=(140,220))
-
-    plot(plt1, plt2, plt3, plt4, plt5, plt6, plt7, plt8, 
-        layout = (3,4),
-        size = (1600, 1200)
-    )
-end
+# Scenario functions, ref. control
+scen_funcs = [define_scenario01A, define_scenario01B, define_scenario01C]
+scen_fig_names = ["scenario01A", "scenario01B", "scenario01C"]
 
 
-plot_results()
 
+# for i in eachindex(scen_funcs)
+# #i = 3
+#     def_scen_func = scen_funcs[i]
+#     scen_fig_name = scen_fig_names[i]
+#     ### Scenario definition ###
+#     obj_scenario, F0, lb, ub, cons, lb_con, ub_con, scen_data = def_scen_func(t0, tf, p, N);
 
-# To do...
-# Clean up
-# Add Nd to plots
-# Save plots for different scenarios
+#     # Solve OCP
+#     solver = OptimizationOptimJL.BFGS()
+#     sol = solve_OCP(obj_scenario, F0, lb, ub, callback, solver = solver, cons = cons, lb_con = lb_con, ub_con = ub_con)
+
+#     # Simulate with optimized F values
+#     Usim = hcat(sol.u, scen_data.U0[2,:])' # Combine optimized F with original Q
+#     Dsim = scen_data.D0
+
+#     Xsim, Zsim, t_fine_sim = simulate_fine_grid(Usim, Dsim, scen_data.prob, scen_data.t_vec, 50)
+
+#     plt = plot_results(Usim, Dsim, Xsim, Zsim, t_fine_sim, scen_data)
+
+#     savefig(plt, "figures/MPC_" * scen_fig_name * ".pdf")
+# end
+
+## Economic MPC scenarios ###
+
+obj_scenario, U0, lb, ub, cons, lb_con, ub_con, scenario_data = define_scenario02A(t0, tf, p, N) 
+
+optf = OptimizationFunction(obj_scenario, DifferentiationInterface.SecondOrder(ADTypes.AutoForwardDiff(), ADTypes.AutoForwardDiff()), cons = cons)
+
+opt_prob = OptimizationProblem(optf, U0, 0, lb=lb, ub=ub, lcons=lb_con, ucons=ub_con)
+
+sol = solve(opt_prob, Ipopt.Optimizer())

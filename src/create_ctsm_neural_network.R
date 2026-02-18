@@ -15,6 +15,10 @@ act_fun_string <- function(act_fun, input_expr) {
 
 create_ctsm_NN <- function(model, par_name, nn_settings) {
     
+    # Lower and upper bounds of parameters
+    lb = -1e1
+    ub = 1e1
+
     # Check if nn_settings is valid
     if (is.null(nn_settings$input)) {
         stop("nn_settings must contain 'input' field (a vector of input variable names as strings).")
@@ -79,14 +83,14 @@ create_ctsm_NN <- function(model, par_name, nn_settings) {
                 # Add parameters for weights and biases in the hidden layer i
                 for (k in 1:no_neurons_prev) {
                     pname <- paste0("W", par_name, i, "_", j, k)
-                    vec <- c(initial = runif(1, -1, 1), lower = -10, upper = 10)
+                    vec <- c(initial = runif(1, -1, 1), lower = lb, upper = ub)
                     # Use do.call to build the named argument
                     args <- list()
                     args[[pname]] <- vec
                     do.call(model$setParameter, args)
                 }
                 pname <- paste0("b", par_name, i, "_", j)
-                vec <- c(initial = 0.0, lower = -10, upper = 10)
+                vec <- c(initial = 0.0, lower = lb, upper = ub)
                 args <- list()
                 args[[pname]] <- vec
                 do.call(model$setParameter, args)
@@ -111,14 +115,14 @@ create_ctsm_NN <- function(model, par_name, nn_settings) {
     # Add parameters for weights and biases in output layer
     for (k in 1:no_neurons_prev) {
         pname <- paste0("W", par_name, i + 1, "_1", k)
-        vec <- c(initial = runif(1, -1, 1), lower = -10, upper = 10)
+        vec <- c(initial = runif(1, -1, 1), lower = lb, upper = ub)
         # Use do.call to build the named argument
         args <- list()
         args[[pname]] <- vec
         do.call(model$setParameter, args)
     }
     pname <- paste0("b", par_name, i + 1, "_1")
-    vec <- c(initial = 0.0, lower = -10, upper = 10)
+    vec <- c(initial = 0.0, lower = lb, upper = ub)
     args <- list()
     args[[pname]] <- vec
     do.call(model$setParameter, args)

@@ -39,7 +39,7 @@ function evaluate_NN(NN_params, z0)
 
     layer = 0
     z = z0_normalized
-    for i in 1:(length(NN_params)-3) # Exclude input and output and output layer
+    for i in 1:(length(NN_params)-3) # Exclude input and output pars and output layer
         layer += 1
         W = NN_params[Symbol("layer_", layer)].W
         b = NN_params[Symbol("layer_", layer)].b
@@ -84,3 +84,17 @@ function callback(state, loss_val)
         return false
     end
 end
+
+function PID_controller(setpoint, measurement, K_PID, dt, integral_prev, error_prev)
+
+    Kp, Ki, Kd = K_PID
+
+    error = setpoint - measurement
+    integral = integral_prev + error * dt
+    derivative = (error - error_prev) / dt
+
+    output = Kp * error + Ki * integral + Kd * derivative
+
+    return output, integral, error
+end
+
