@@ -6,10 +6,22 @@ using CSV, DataFrames, JSON, Revise
 
 using Plots
 using LaTeXStrings
-default(fontfamily="times", titlefontsize = 12)
+using Measures
+default(fontfamily="times", titlefontsize = 9, guidefontsize = 9)
+
+# Set seed for reproducibility
+using Random
+seed = 1234
+Random.seed!(seed)
+
+# tickfontsize, legendfontsize
 
 includet("../src/util.jl")
 includet("../src/system_dyn_JuMP.jl")
+includet("../src/models_JuMP.jl")
+includet("../src/MPC_scenarios_JuMP.jl")
+includet("../src/plots_JuMP.jl")
+includet("../src/simulate_JuMP.jl")
 
 # ----------- Load parameters --------
 
@@ -37,183 +49,61 @@ V = (Va = par_fixed_nt.Va, Vd = par_fixed_nt.Vd, Vt = par_fixed_nt.Vt)
 # Define parameter tuple
 p = (NA_params = NA_params, ND_params = ND_params, s = s, V = V)
 
+# Evaluate Nd for a range of Q values
+Q_val = range(20,40, length=100)
+Nd_vals = [evaluate_NN(ND_params, [2.63, 0.3, 0.3, Q])[1] for Q in Q_val]
+plot(Q_val, Nd_vals, xlabel="Q", ylabel="Nd", title="Nd vs Q")
+F_val = range(0.2, 0.45, length=100)
+Nd_vals_F = [evaluate_NN(ND_params, [2.63, 0.3, F, 28])[1] for F in F_val]
+plot(F_val, Nd_vals_F, xlabel="F", ylabel="Nd", title="Nd vs F", ylims = (300,800))
 
+## Reference control
+scen_funs = [define_scenario01A, define_scenario01B, define_scenario01C]
 
-# ---------- Problem setup ----------
-t0 = 0
-tf = 6
-dt = 0.25
-N = Int((tf - t0) / dt)  # number of intervals
-t = range(t0, tf, length=N+1)
+for scen_fun in scen_funs
 
-Nx_per_interval = 10
-Nx = N * Nx_per_interval + 1   # total number of state nodes
-dt_sim = dt / Nx_per_interval
-t_sim = range(t0, tf, length=Nx)
-
-# What control interval does each state belong to?
-interval_of = repeat(1:N, inner=Nx_per_interval)
-push!(interval_of, N)  # last state belongs to last interval
-
-# Define scenario
-cgina = repeat([4.4], inner=N) # Disturbance sequence (cgina)
-Fgina = repeat([180], inner=N) # Disturbance sequence (Fgina)
-D = hcat(cgina, Fgina)'
-
-# Previous control input (will be updated in closed-loop)
-F_prev = 0.3
-Q_prev = 28.0
-
-# Minimum capture efficiency
-eta_min = 0.90
-
-# Electricity and CO2 prices
-p_el = repeat([0.2, 1.0], inner=Int(N/2)) # EUR/kWh
-p_CO2 = 0.07  #EUR/kg
-
-# MPC tuning Parameters
-lambda_F = 1e3
-lambda_Q = 1e1
-lambda_s = 1e6
-
-# ODE rhs:
-ffun = system_equations_w_cum_CO2
-
-# ----- Model -------
-model = Model(Ipopt.Optimizer)
-set_attribute(model, "print_level", 0)
-
-# Initial state
-x0 = [2.63; 0.3; 0.3; 0.0; 0.0] # Initial state
-nx = length(x0)
-
-# States (fine grid, Nx nodes)
-@variable(model, x[1:nx, 0:(Nx-1)]) # 5 states: ca, cd, ct, Ma, Mina
-# Set initial guess for states (constant at initial state)
-X_guess = repeat(x0, 1, Nx) # Initial guess for states (constant at initial state)
-set_start_value.(x, X_guess)
-
-# Controls (coarse grid, N intervals)
-# bounds
-F_min, F_max = 0.22, 0.4
-Q_min, Q_max = 22.0, 35.0
-s_min = 0.0
-@variable(model, F[1:N], lower_bound=F_min, upper_bound=F_max)
-@variable(model, Q[1:N], lower_bound=Q_min, upper_bound=Q_max)
-@variable(model, s, lower_bound=s_min) # Slack variable for constraint violation
-
-# Initial guess for controls
-F_guess = fill(0.3, N)
-Q_guess = fill(28.0, N)
-set_start_value.(F, F_guess)
-set_start_value.(Q, Q_guess)
-set_start_value(s, 0.0)
-
-# constraints
-@constraint(model, initial_state[i = 1:nx],  x[i,0] == x0[i]) # Initial condition
-
-# dynamic constraints using Euler collocation
-for i in 1:Nx-1
-    # Determine which control interval this state belongs to
-    k = interval_of[i] # control interval index for state node i-1
-    # Evaluate dynamics at current state and control
-    u_k = [F[k], Q[k]]
-    d_k = D[:,k]
-    f = ffun(x[:,i-1], u_k, d_k, p)
-    for s in 1:nx 
-        @constraint(model, x[s,i] == x[s,i-1] + dt_sim * f[s])
-    end
+    p_scen = scen_fun()
+    model = generate_JuMP_model_ref(p_scen, p)
+    optimize!(model)
+    println(solution_summary(model))
+    plt = plot_ref_MPC(model, p_scen, p)
+    savefig(plt, "figures/MPC_" * p_scen.name * ".pdf")
+    plt    
 end
 
-# Output constraint at final time step (Ensure capture efficiency meets minimum requirement at average over the horizon)
-@constraint(model, x[4,end] - x[5,end] * eta_min + s >= 0); # Ma(tf) - Mina(tf)*eta_min/100 + s >= 0
+## Scenario parameters
+# Scenario 02A - EMPC with optimized F and Q
+p02A = define_scenario02A()
 
+# Generate JuMP model for EMPC scenario 02A
+model_2A = generate_JuMP_model_EMPC(p02A, p)
 
+optimize!(model_2A)
+println(solution_summary(model_2A))
 
-# Objective: 
-# Assuming a constant CO2 price 
-@objective(model, Min,
-    sum(p_el[k] * Q[k] * dt for k = 1:N) 
-        + p_CO2 * x[4,end] * dt * N 
-        + lambda_F * ((F[1] - F_prev)^2 + sum((F[k] - F[k-1])^2 for k = 2:N)) 
-        + lambda_Q * ((Q[1] - Q_prev)^2 + sum((Q[k] - Q[k-1])^2 for k = 2:N)) 
-        + lambda_s * s^2
-)
+plt = plot_EMPC(model_2A, p02A, p)
+plt
+# Save as PDF
+savefig(plt, "figures/MPC_scenario02A.pdf")
+plt
 
+p02B = (; p02A..., lambda = [1e4, 1e2, 1e6]) # Keep control input and slack penalties, but remove price from objective
+model_2B = generate_JuMP_model_EMPC_no_price(p02B, p)
+optimize!(model_2B)
+println(solution_summary(model_2B))
+plt_2B = plot_EMPC(model_2B, p02B, p)
+savefig(plt_2B, "figures/MPC_scenario02B.pdf")
 
-optimize!(model)
+p02C = (; p02A..., eta_min = 0.70) # Increase minimum capture efficiency requirement
+model_2C = generate_JuMP_model_EMPC(p02C, p)
+optimize!(model_2C)
+println(solution_summary(model_2C))
+plt_2C = plot_EMPC(model_2C, p02C, p)
+savefig(plt_2C, "figures/MPC_scenario02C.pdf")  
 
-println(solution_summary(model))
-
-termination_status(model)
-primal_status(model)
-objective_value(model)
-# Extract values
-
-x_opt = value.(x)
-F_opt = value.(F)
-Q_opt = value.(Q)
-s_opt = value(s)
-
-hfun = output_equations
-
-
-function euler_simulation(ffun, hfun, x0, U, D, p, t_vec)
-    nx = length(x0)
-    X = zeros(nx, length(t_vec))
-    X[:,1] = x0
-    
-    z0 = hfun(x0, U[:,1], D[:,1], p)
-    nz = length(z0)
-    Z = zeros(nz, length(t_vec)-1)
-    
-    for i in 1:(length(t_vec)-1)
-        f = ffun(X[:,i], U[:,i], D[:,i], p)
-        X[:,i+1] = X[:,i] + dt_sim * f
-        Z[:,i] = hfun(X[:,i], U[:,i], D[:,i], p)
-    end
-    return X, Z
-end
-
-U_sim = repeat(hcat(F_opt, Q_opt)', inner=(1,Nx_per_interval))
-Dsim = repeat(D, inner=(1,Nx_per_interval))
-
-X, Z = euler_simulation(ffun, hfun, x0, U_sim, Dsim, p, t_sim)
-
-# Compute cost and revenues
-
-cost = p_el .* Q_opt .* dt
-revenue = sum(reshape(p_CO2 * diff(X[4,:]) * dt_sim, Nx_per_interval, N), dims=1)
-profit = revenue' - cost
-
-# Plotting
-plt_cap_eff = plot(t_sim[2:end], Z[3,:], seriestype=:steppre, linestyle=:dot, label=L"y^g_{a,ref}", title="Output", xlabel="", ylabel="Cap. eff. [%]", ylims=(20,110))
-
-plt2 = plot(t_sim[2:end], Z[1:2,:]', labels=["yga" "ygina"], title="Output Trajectories with Optimized F", xlabel="Time (hr)", ylabel="Concentration (vol%)", ylims = (-2,14))
-plt3 = plot(t_sim[2:end], Z[4,:], labels=["Na"],  title = "Capture rate", xlabel="Time (hr)", ylabel="Capture Rate (kg/hr)", ylims=(0,50))
-
-plt_x = plot(t_sim, X[1:3,:]', labels=[L"c_a" L"c_d" L"c_t"], title="States", xlabel="", ylabel="CO2 liq. conc. [kmol/m3]", ylims = (-1,5))
-plt_F = plot(t, vcat(F_opt[1], F_opt), seriestype = :steppre, title="Optimized Control Input", xlabel="Time (hr)", ylabel="Flow Rate", ylims=(0.2,0.45), label=L"F")
-plot!(plt_F, t, fill(F_min, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
-plot!(plt_F, t, fill(F_max, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
-
-plt_Q = plot(t, vcat(Q_opt[1], Q_opt), seriestype = :steppre, label=L"Q", title="", xlabel="", ylabel="Reboiler duty [kW]", ylims = (20,37))
-plot!(plt_Q, t, fill(Q_min, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
-plot!(plt_Q, t, fill(Q_max, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
-
-plt_cgina = plot(t_sim, vcat(Dsim[1,1], Dsim[1,:]), seriestype = :steppre, label=L"c_{in,a}^g", title="Disturbances", xlabel="", ylabel="Flue gas conc. [mol/m3]", ylims=(4,5))
-plt_Fgina = plot(t_sim, vcat(Dsim[2,1], Dsim[2,:]), seriestype = :steppre, label=L"F_{in,a}^g", title="", xlabel="", ylabel="Liq. flow rate [m3/h]", ylims=(140,220))
-
-plt_p_el = plot(t, vcat(p_el[1], p_el) * 1000, seriestype=:steppre, label=L"p_{el}", title="Electricity Price", xlabel="", ylabel="Price [EUR/MWh]", ylims=(0,1200))
-plt_profit = plot(t, vcat(profit[1], profit), seriestype=:steppre, label=L"Profit", title="Profit over Time", xlabel="Time (hr)", ylabel="Profit [EUR]", ylims=(-10,10))
-
-plt_cap_cum = plot(t_sim, X[4,:], seriestype=:steppre, label=L"M_a", title="Cumulative CO2 Captured", xlabel="Time (hr)", ylabel="Mass of CO2 Captured [kg]", ylims=(0,300))
-hline!([eta_min * X[5,end]], linestyle=:dash, color=:red, label="Min. CO2 to capture")
-
-scale = 900.0
-H2W_ratio = 0.8
-
-plt_out = plot(plt_cap_eff, plt_F, plt_cgina, plt_x, plt_Q, plt_Fgina, plt_p_el, plt_profit, plt_cap_cum,
-    layout = (3,3), link=:x, 
-    size = (scale, scale * H2W_ratio)
-)
+p02D = (; p02C..., lambda = [1e4, 1e2, 1e6]) # Keep control input and slack penalties, but remove price from objective
+model_2D = generate_JuMP_model_EMPC_no_price(p02D, p)
+optimize!(model_2D)
+println(solution_summary(model_2D))
+plt_2D = plot_EMPC(model_2D, p02D, p)
+savefig(plt_2D, "figures/MPC_scenario02D.pdf")

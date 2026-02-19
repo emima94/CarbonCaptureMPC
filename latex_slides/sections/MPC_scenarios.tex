@@ -63,7 +63,7 @@
         \column{0.5\textwidth}
         Objective:
         \begin{align*}
-            \phi(t) = \int_{t_0}^{t_f} \left( (\eta(t) - \eta_{\text{ref}})^2 + \lambda_F \, dF \right) dt,
+            \phi(t) = \int_{t_0}^{t_f} \left( (\eta(t) - \eta_{\text{ref}})^2 + \lambda_F \, (dF)^2 \right) dt,
         \end{align*}
         
 
@@ -71,9 +71,10 @@
 \end{frame}
 
 \begin{frame}{Scenario 1A: Reference control w. changing inlet flue gas flow rate}
+
     \begin{figure}
         \centering
-        \includegraphics[width=0.7\textwidth]{../figures/MPC_scenario01A.pdf}
+        \includegraphics[width=0.75\textwidth]{../figures/MPC_scenario01A.pdf}
         %\caption{MPC scenario 1A: reference control with step change in inlet flue gas flow rate.}
     \end{figure}
 
@@ -82,7 +83,7 @@
 \begin{frame}{Scenario 1B: Reference control w. changing reboiler duty}
     \begin{figure}
         \centering
-        \includegraphics[width=0.7\textwidth]{../figures/MPC_scenario01B.pdf}
+        \includegraphics[width=0.75\textwidth]{../figures/MPC_scenario01B.pdf}
         %\caption{MPC scenario 1B: reference control with step change in reboiler duty.}
     \end{figure}
 
@@ -91,7 +92,7 @@
 \begin{frame}{Scenario 1C: Reference control w. changing reference and flue gas inlet \ce{CO2} concentration}
     \begin{figure}
         \centering
-        \includegraphics[width=0.7\textwidth]{../figures/MPC_scenario01C.pdf}
+        \includegraphics[width=0.75\textwidth]{../figures/MPC_scenario01C.pdf}
         %\caption{MPC scenario 1C: reference control with step change in reboiler duty.}
     \end{figure}
 
@@ -121,7 +122,7 @@
         Objective:
         \begin{align*}
             \phi(t) &= \int_{t_0}^{t_f} ( \overbrace{p_{el}(t) Q(t)}^{\textit{electricity costs}} - \overbrace{p_{\ce{CO2}}(t) m_a(t)}^{\textit{CO2 revenue}}
-            + \overbrace{\lambda_F \, dF + \lambda_Q \, dQ}^{\textit{input change}})\,dt \\ &\quad + \overbrace{\lambda_s s}^{\textit{slack var.}},
+            + \overbrace{\lambda_F \, (dF)^2 + \lambda_Q \, (dQ)^2}^{\textit{input change}})\,dt \\ &\quad + \overbrace{\lambda_s (s)^2}^{\textit{slack var.}},
         \end{align*}
         Additional constraints:
         \begin{align*}
@@ -132,4 +133,43 @@
         \end{align*}  
         where $M_a$ and $M_{in,a}$ are the cumulative captured and inlet \ce{CO2} [kg], respectively, $\eta_{\text{min}}$ is the minimum required capture efficiency over the horizon, and $s$ is a slack variable to ensure feasibility.      
     \end{columns}
+\end{frame}
+
+\begin{frame}{Scenario 2A: EMPC with varying electricity price}
+    \begin{figure}
+        \centering
+        \includegraphics[width=1\textwidth]{../figures/MPC_scenario02A.pdf}
+        %\caption{MPC scenario 2: EMPC with varying electricity price.}
+    \end{figure}
+    
+\end{frame}
+
+\begin{frame}{Scenario 2B: MPC with no electricity price in objective}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=1\textwidth]{../figures/MPC_scenario02B.pdf}
+        %\caption{MPC scenario 2: EMPC with varying electricity price.}
+    \end{figure}
+    
+\end{frame}
+
+\begin{frame}{Scenario 2C: MPC with electricity price in objective}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=1\textwidth]{../figures/MPC_scenario02C.pdf}
+        %\caption{MPC scenario 2: EMPC with varying electricity price.}
+    \end{figure}
+    
+\end{frame}
+
+    \begin{frame}{Scenario 2D: MPC with no electricity price in objective}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=1\textwidth]{../figures/MPC_scenario02D.pdf}
+        %\caption{MPC scenario 2: EMPC with varying electricity price.}
+    \end{figure}
+    
 \end{frame}

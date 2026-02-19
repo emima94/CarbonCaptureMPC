@@ -215,13 +215,17 @@ Nd_F <- sapply(F, function(F_i) {
 })
 Nd_F
 par(mfrow = c(1,1))
-plot(F, Nd_F, type = "l", xlab = "F", ylab = "Nd", main = "Estimated Nd vs F")
+pdf("figures/Nd_vs_F.pdf", width = 5, height = 4)
+p <- plot(F, Nd_F, type = "l", xlab = "F", ylab = "Nd", main = "Estimated Nd vs F")
+dev.off()
 Q <- seq(22,34, length.out = 50)
 Nd_Q <- sapply(Q, function(Q_i) {
     df_input <- data.frame(ca = 2.63, cd = 0.4, F = 0.32, Q = Q_i, cgina = NaN, Fgina = NaN)
     evaluate_algebraics_simple(model, df_input, par_free = par_star)$Nd
 })
+pdf("figures/Nd_vs_Q.pdf", width = 5, height = 4)
 plot(Q, Nd_Q, type = "l", xlab = "Q", ylab = "Nd", main = "Estimated Nd vs Q")
+dev.off()
 ca <- seq(2.0, 3.5, length.out = 50)
 Nd_ca <- sapply(ca, function(ca_i) {
     df_input <- data.frame(ca = ca_i, cd = 0.4, F = 0.32, Q = 28, cgina = NaN, Fgina = NaN)

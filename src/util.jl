@@ -98,3 +98,44 @@ function PID_controller(setpoint, measurement, K_PID, dt, integral_prev, error_p
     return output, integral, error
 end
 
+function rk4_step(xk, uk, dk, p, dt, ffun)
+
+    nx = length(xk)
+
+    k1 = ffun(xk, uk, dk, p)
+
+    x2 = [xk[i] + dt/2 * k1[i] for i in 1:nx]
+    k2 = ffun(x2, uk, dk, p)
+
+    x3 = [xk[i] + dt/2 * k2[i] for i in 1:nx]
+    k3 = ffun(x3, uk, dk, p)
+
+    x4 = [xk[i] + dt * k3[i] for i in 1:nx]
+    k4 = ffun(x4, uk, dk, p)
+
+    return [
+        xk[i] + dt/6 * (k1[i] + 2k2[i] + 2k3[i] + k4[i])
+        for i in 1:nx
+    ]
+end
+
+function rk4_step_new(xk, uk, dk, p, dt, ffun)
+
+    k1 = ffun(xk, uk, dk, p)
+    k2 = ffun(xk + dt/2.0 * k1, uk, dk, p)
+    k3 = ffun(xk + dt/2.0 * k2, uk, dk, p)
+    k4 = ffun(xk + dt * k3, uk, dk, p)
+    
+    x_next = xk + dt/6.0 * (k1 + 2k2 + 2k3 + k4)
+    return x_next
+end
+
+
+
+
+
+function euler_step(xk, uk, dk, p, dt, ffun)
+    f = ffun(xk, uk, dk, p)
+    x_next = xk + dt * f
+    return x_next
+end

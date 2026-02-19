@@ -67,3 +67,5 @@ function simulate_fine_grid(U, D, prob, t_vec, n_points_per_interval=10)
     
     return X, Z, t_fine
 end
+
+
