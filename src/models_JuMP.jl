@@ -239,3 +239,4 @@ function generate_JuMP_model_EMPC_no_price(p_scenario, p)
     return model
 end
 
+

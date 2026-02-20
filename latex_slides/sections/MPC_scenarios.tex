@@ -9,7 +9,7 @@
 % Solve OCPs with single shooting.
 % Import nn_settings and par_star from R to Julia. 
 % Make Julia functions to construct the system equations, based on nn_settings and par_star.
-\section{MPC scenarios}
+\section{MPC scenarios, open loop}
 
 \begin{frame}{MPC scenarios}
     \begin{itemize}
@@ -136,6 +136,7 @@
 \end{frame}
 
 \begin{frame}{Scenario 2A: EMPC with varying electricity price}
+    Price sensitivity: Yes.
     \begin{figure}
         \centering
         \includegraphics[width=1\textwidth]{../figures/MPC_scenario02A.pdf}
@@ -145,7 +146,7 @@
 \end{frame}
 
 \begin{frame}{Scenario 2B: MPC with no electricity price in objective}
-
+Price sensitivity: No.
     \begin{figure}
         \centering
         \includegraphics[width=1\textwidth]{../figures/MPC_scenario02B.pdf}
@@ -154,8 +155,8 @@
     
 \end{frame}
 
-\begin{frame}{Scenario 2C: MPC with electricity price in objective}
-
+\begin{frame}{Scenario 2C: MPC with no electricity price in objective}
+Price sensitivity: No.
     \begin{figure}
         \centering
         \includegraphics[width=1\textwidth]{../figures/MPC_scenario02C.pdf}
@@ -164,12 +165,48 @@
     
 \end{frame}
 
-    \begin{frame}{Scenario 2D: MPC with no electricity price in objective}
-
+    \begin{frame}{Scenario 2D: MPC with electricity price in objective}
+    Price sensitivity: Yes.
     \begin{figure}
         \centering
         \includegraphics[width=1\textwidth]{../figures/MPC_scenario02D.pdf}
         %\caption{MPC scenario 2: EMPC with varying electricity price.}
     \end{figure}
+    
+\end{frame}
+
+    \begin{frame}{Scenario 2E: MPC with no electricity price in objective}
+Price sensitivity: No.
+    \begin{figure}
+        \centering
+        \includegraphics[width=1\textwidth]{../figures/MPC_scenario02E.pdf}
+        %\caption{MPC scenario 2: EMPC with varying electricity price.}
+    \end{figure}
+    
+\end{frame}
+
+\begin{frame}{Simulations with constant F and Q}
+    Same time horizon, disturbances, electricity prices and CO2 prices as in scenario 2.
+    \begin{columns}
+    \column{0.5\textwidth}
+         \begin{figure}
+        \centering
+        \includegraphics[width=1\textwidth]{../figures/cap_eff_vs_F_Q.pdf}
+    \end{figure}
+    \column{0.5\textwidth}
+         \begin{figure}
+        \centering
+        \includegraphics[width=1\textwidth]{../figures/profit_vs_F_Q.pdf}
+    \end{figure}
+    \end{columns}
+   
+\end{frame}
+
+\begin{frame}{Profit vs minimum capture efficiency requirement}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.70\textwidth]{../figures/profit_vs_eta_min.pdf}
+    \end{figure}
+
     
 \end{frame}

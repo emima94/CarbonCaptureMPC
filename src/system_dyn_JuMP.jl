@@ -39,10 +39,50 @@ function system_equations_w_cum_CO2(x, u, d, p)
 
 end
 
+function system_equations(x, u, d, p)
+
+    # Extract states
+    ca, cd, ct = x
+
+    # Parameters #
+    NA_params, ND_params, s, V = p
+    sa, sd, st, s_yga = s
+    Va, Vd, Vt = V
+
+    # Conversion Constants
+    M_CO2 = 44.01 # g/mol
+    g2kg = 1e-3 # g to kg
+    mol2kmol = 1e-3
+
+    # Inputs #
+    F, Q = u
+
+    # Disturbances #
+    cgina, Fgina = d
+
+    # Evaluate Na
+    input_Na = [ca]
+    Na = evaluate_NN(NA_params, input_Na)[1] # Output is scalar
+
+    # Evaluate Nd
+    input_Nd = [ca, cd, F, Q]
+    Nd = evaluate_NN(ND_params, input_Nd)[1] # Output is scalar
+
+    # ODEs:
+    dx = [(F * (ct - ca) + Na * mol2kmol) / Va,
+        (F * (ca - cd) - Nd * mol2kmol) / Vd,
+        F * (cd - ct) / Vt
+    ] 
+    
+    return dx
+
+end
+
 
 function output_equations(x, u, d, p)
     # Extract states
-    ca, cd, ct, Ma, Mina = x
+    ca = x[1]
+    cd = x[2]
 
     # Parameters #
     NA_params, ND_params, s, V = p

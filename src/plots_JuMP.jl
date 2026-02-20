@@ -1,6 +1,6 @@
 
 
-function plot_EMPC(model, p_EMPC, p)
+function plot_EMPC(model, p_EMPC, p, U_sim = nothing)
     # Extract scenario parameters
     p_el = p_EMPC.p_el
     p_CO2 = p_EMPC.p_CO2
@@ -22,18 +22,28 @@ function plot_EMPC(model, p_EMPC, p)
     F_prev = p_EMPC.F_prev
     Q_prev = p_EMPC.Q_prev
 
+    lambda_F, lambda_Q, lambda_s = lambda
+
     # Bounds
     F_min, Q_min, s_min = lb
     F_max, Q_max, s_max = ub
 
 
     # Extract values
-    x_opt = value.(model[:x])
-    F_opt = value.(model[:F])
-    Q_opt = value.(model[:Q])
-    s_opt = value(model[:s])
+    # x_opt = value.(model[:x])
+    # F_opt = value.(model[:F])
+    # Q_opt = value.(model[:Q])
+    # s_opt = value(model[:s])
 
-    U_sim = repeat(hcat(F_opt, Q_opt)', inner=(1,Nx_per_interval))
+    if U_sim === nothing
+         F_sim = value.(model[:F])
+         Q_sim = value.(model[:Q])
+    else
+        F_sim = U_sim[1,:]
+        Q_sim = U_sim[2,:]
+    end
+
+    U_sim = repeat(hcat(F_sim, Q_sim)', inner=(1,Nx_per_interval))
     Dsim = repeat(D, inner=(1,Nx_per_interval))
 
     X, Z = euler_simulation(ffun, hfun, x0, U_sim, Dsim, p, t_sim, dt_sim)
@@ -46,29 +56,32 @@ function plot_EMPC(model, p_EMPC, p)
     Ma = X[4,:] # Cumulative CO2 captured [kg]
 
     # Compute cost and revenues
-    cost = p_el .* Q_opt # Cost of electricity [EUR/h]
+    cost = p_el .* Q_sim # Cost of electricity [EUR/h]
     revenue = p_CO2 * ma # [EUR/h] Revenue from captured CO2
     profit = revenue .- repeat(cost, inner=Nx_per_interval) # Total profit over time [EUR/h]
 
     # Compute SRD
     s2h = 1/3600 # convert from per second to per hour
-    SRD = (repeat(Q_opt, inner=Nx_per_interval) / s2h) ./ ma * 1e-3 # kJ/h per kg/h of CO2 captured
+    SRD = (repeat(Q_sim, inner=Nx_per_interval) / s2h) ./ ma * 1e-3 # kJ/h per kg/h of CO2 captured
 
     colors = palette(:auto, 10)
 
     # Plotting
-    plt_cap_eff = plot(t_sim[2:end], Z[3,:], seriestype=:steppre, label=L"\eta", title="Output", xlabel="", ylabel="Cap. eff. [%]", ylims=(20,110))
+    plt_cap_eff = plot(t_sim[2:end], Z[3,:], seriestype=:steppre, label=L"\eta", title="Output", xlabel="", ylabel="Cap. eff. [%]", ylims=(50,110))
 
 
     plt2 = plot(t_sim[2:end], Z[1:2,:]', labels=["yga" "ygina"], title="Output Trajectories with Optimized F", xlabel ="", ylabel="Concentration (vol%)", ylims = (-2,14))
     plt3 = plot(t_sim[2:end], Z[4,:], labels=["Na"],  title = "Capture rate", xlabel ="", ylabel="Capture Rate (kg/hr)", ylims=(0,50))
 
     plt_x = plot(t_sim, X[1:3,:]', labels=[L"c_a" L"c_d" L"c_t"], title="States", xlabel="", ylabel="CO2 liq. conc. [kmol/m3]", ylims = (-1,5))
-    plt_F = plot(t, vcat(F_opt[1], F_opt), seriestype = :steppre, title="Optimized Control Input", xlabel ="", ylabel="Flow Rate", ylims=(0.2,0.45), label=L"F")
+    lambda_F_str = @sprintf("%.0e", lambda_F)
+    lambda_Q_str = @sprintf("%.0e", lambda_Q)
+
+    plt_F = plot(t, vcat(F_sim[1], F_sim), seriestype = :steppre, title=L"\lambda_F = %$lambda_F_str", xlabel ="", ylabel="Flow Rate", ylims=(0.2,0.35), label=L"F")
     plot!(plt_F, t, fill(F_min, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
     plot!(plt_F, t, fill(F_max, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
 
-    plt_Q = plot(t, vcat(Q_opt[1], Q_opt), seriestype = :steppre, label=L"Q", title="", xlabel="", ylabel="Reboiler duty [kW]", ylims = (20,37))
+    plt_Q = plot(t, vcat(Q_sim[1], Q_sim), seriestype = :steppre, label=L"Q", title=L"\lambda_Q = %$lambda_Q_str", xlabel="", ylabel="Reboiler duty [kW]", ylims = (20,37))
     plot!(plt_Q, t, fill(Q_min, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
     plot!(plt_Q, t, fill(Q_max, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
 
@@ -78,7 +91,7 @@ function plot_EMPC(model, p_EMPC, p)
     plt_p_el = plot(t, vcat(p_el[1], p_el) * 1000, seriestype=:steppre, label=L"p_{el}", title="Electricity Price", xlabel="", ylabel="Price [EUR/MWh]", ylims=(0,1200))
     plt_profit = plot(t_sim, vcat(profit[1], profit), seriestype=:steppre, label="", title="Profit", xlabel ="", ylabel="Profit [EUR/h]")
 
-    plt_cap_cum = plot(t_sim, Ma, seriestype=:steppre, label=L"M_a", title="Cumulative CO2 Captured", xlabel ="", ylabel="Mass of CO2 Captured [kg]", ylims=(0,500))
+    plt_cap_cum = plot(t_sim, Ma, seriestype=:steppre, label=L"M_a", title="Cumulative CO2 Captured", xlabel ="", ylabel="Mass of CO2 Captured [kg]", ylims=(0,600))
     hline!([eta_min * X[5,end]], linestyle=:dash, color=:red, label="")
     annotate!(t_sim[end]*0.5, eta_min * X[5,end] * 1.05, text("Req.: $(eta_min * 100) %", font("Times", :black, 8)))
     hline!([X[5,end]], linestyle=:dash, color=:blue, label="")
@@ -90,7 +103,8 @@ function plot_EMPC(model, p_EMPC, p)
     H2W_ratio = 0.4
 
     # Write title as annotation in the first plot
-    title_str = "Total profit: $(round(sum(profit), digits=1)) EUR"
+    total_profit = sum(profit) * dt_sim
+    title_str = "Total profit: $(round(total_profit, digits=1)) EUR"
     #annotate!(plt_cap_eff, 0.5 * t_sim[end], 120, text(title_str, font("Times", :black, 10, :bold)))
 
     plt_out = plot(plt_cap_eff, plt_cap_cum, plt_SRD, plt_cgina, plt_F, 
@@ -101,7 +115,7 @@ function plot_EMPC(model, p_EMPC, p)
         plot_title = title_str
     )
 
-    return plt_out
+    return plt_out, total_profit
 end
 
 
@@ -151,7 +165,8 @@ function plot_ref_MPC(model, p_ref, p)
     plot!(plt_cap_eff, t_sim[2:end], Z[3,:], label=L"\eta", color = colors[1])
 
     plt_x = plot(t_sim, X[1:3,:]', labels=[L"c_a" L"c_d" L"c_t"], title="States", xlabel="", ylabel="CO2 liq. conc. [kmol/m3]", ylims = (-1,5))
-    plt_F = plot(t, vcat(F_opt[1], F_opt), seriestype = :steppre, title="Optimized Control Input", xlabel ="", ylabel="Flow Rate [m3/h]", ylims=(0.2,0.45), label=L"F")
+    lambda_F_str = @sprintf("%.0e", lambda_F)
+    plt_F = plot(t, vcat(F_opt[1], F_opt), seriestype = :steppre, title=L"\lambda_F = %$lambda_F_str", xlabel ="", ylabel="Flow Rate [m3/h]", ylims=(0.2,0.45), label=L"F")
     plot!(plt_F, t, fill(F_min, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
     plot!(plt_F, t, fill(F_max, N+1), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
 
