@@ -82,6 +82,8 @@ function create_JuMP_model_sys_id(datasets, NN_settings, x0)
         end
     end
 
+
+
     # --------------------------------------------------------
     # Euler collocation with sub-steps between data points
     # --------------------------------------------------------
@@ -173,6 +175,26 @@ function create_JuMP_model_sys_id(datasets, NN_settings, x0)
         end
     end
 
+    # Add regularization to encourage steady state conditions at the first m time steps of each dataset
+    m_steady = 5
+    lambda_steady = 1e-2
+    for d in 1:nd
+        u_d = datasets[d].u
+        dist_d = datasets[d].dist
+        u_d_avg = mean(u_d[:, 1:m_steady], dims=2)
+        dist_d_avg = mean(dist_d[:, 1:m_steady], dims=2)
+        for k in 1:m_steady
+            x_k   = X[d][:, k]
+            u_k   = u_d_avg
+            dist_k = dist_d_avg
+            dx = system_equations_sys_id(x_k, u_k, dist_k, p)
+            for i in 1:nx
+                total_mse += lambda_steady * dx[i]^2
+            end
+        end
+    end
+
+    # Define objective
     @objective(model, Min, total_mse)
 
     return model, p, X

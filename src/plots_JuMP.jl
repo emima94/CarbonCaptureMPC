@@ -193,3 +193,55 @@ function plot_ref_MPC(model, p_ref, p)
 
     return plt_out
 end
+
+
+
+function plot_simulation(X, Z, t_sim, U, D, p, dt, U_min, U_max, D_min, D_max)
+    colors = palette(:auto)
+    # Plotting
+    plt_cap_eff = plot(t_sim[2:end], Z[3,:], seriestype=:steppre, color = colors[1], label = L"\eta",title="Output", xlabel="", ylabel="Cap. eff. [%]", ylims=(50,110))
+
+    plt_x = plot(t_sim, X[1:3,:]', labels=[L"c_a" L"c_d" L"c_t"], title="States", xlabel="", ylabel="CO2 liq. conc. [kmol/m3]", ylims = (-1,5))
+    
+    plt_N = plot(t_sim[2:end], Z[5:6,:]', labels=[L"Na" L"Nd"], title="NN Outputs", xlabel="", ylabel="Na, Nd [mol/h]", ylims=(500,900))
+
+    plt_F = plot(t_sim, vcat(U[1,1], U[1,:]), seriestype = :steppre, title="Inputs", xlabel ="", ylabel="Flow Rate [m3/h]", ylims=(0.2,0.45), label=L"F")
+    plot!(plt_F, t_sim, fill(U_min[1], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+    plot!(plt_F, t_sim, fill(U_max[1], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+
+    plt_Q = plot(t_sim, vcat(U[2,1], U[2,:]), seriestype = :steppre, label=L"Q", title="", xlabel="", ylabel="Reboiler duty [kW]", ylims = (22,33))
+    plot!(plt_Q, t_sim, fill(U_min[2], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+    plot!(plt_Q, t_sim, fill(U_max[2], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+
+    plt_cgina = plot(t_sim, vcat(D[1,1], D[1,:]), seriestype = :steppre, label=L"c_{in,a}^g", title="Disturbances", xlabel="", ylabel="Flue gas conc. [mol/m3]", ylims=(3.9,5))
+    plot!(plt_cgina, t_sim, fill(D_min[1], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+    plot!(plt_cgina, t_sim, fill(D_max[1], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+
+    plt_Fgina = plot(t_sim, vcat(D[2,1], D[2,:]), seriestype = :steppre, label=L"F_{in,a}^g", title="", xlabel="", ylabel="Flue gas flow rate [m3/h]", ylims=(140,220))
+    plot!(plt_Fgina, t_sim, fill(D_min[2], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+    plot!(plt_Fgina, t_sim, fill(D_max[2], length(t_sim)), seriestype=:steppre, linestyle=:dash, color=:red, label = "")
+
+    SRD = U[2,:] ./ Z[4,:] * 1e-3 * 3600 # kJ/h per kg/h of CO2 captured
+    plt_SRD = plot(t_sim, vcat(SRD[1], SRD), seriestype=:steppre, label=L"SRD", title="Specific Reboiler Duty", xlabel ="", ylabel="SRD [MJ/kg]", ylims=(0,5))
+
+    # Empty plot for spacing
+        plt_empty = plot(title="", xlabel="", ylabel="", xaxis=false, yaxis=false, framestyle=:none)
+
+    scale = 900.0
+    H2W_ratio = 0.5
+
+    # Add x-axis to specified plots
+    plt_x_axis_names = [plt_x, plt_Fgina, plt_Q, plt_SRD]
+    for plt in plt_x_axis_names
+        plot!(plt, xlabel="Time [h]")
+    end
+
+    plt_out = plot(plt_cap_eff, plt_N, plt_cgina, plt_F, 
+                    plt_x, plt_SRD, plt_Fgina, plt_Q,
+        layout = (2,4), link=:x, 
+        size = (scale, scale * H2W_ratio),
+        left_margin = 6mm
+    )
+
+    return plt_out
+end

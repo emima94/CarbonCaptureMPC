@@ -1,9 +1,9 @@
 [0] Config.pm:307> INFO - This is Biber 2.19
 [0] Config.pm:310> INFO - Logfile is 'main.blg'
-[52] biber-darwin:340> INFO - === Fri Feb 20, 2026, 07:57:33
-[95] Biber.pm:419> INFO - Reading 'main.bcf'
-[139] Biber.pm:979> INFO - Found 0 citekeys in bib section 0
-[146] bbl.pm:660> INFO - Writing 'main.bbl' with encoding 'UTF-8'
-[146] bbl.pm:763> INFO - Output to main.bbl
-[146] Biber.pm:131> WARN - The file 'main.bcf' does not contain any citations!
-[146] Biber.pm:133> INFO - WARNINGS: 1
+[38] biber-darwin:340> INFO - === Mon Feb 23, 2026, 12:14:54
+[49] Biber.pm:419> INFO - Reading 'main.bcf'
+[91] Biber.pm:979> INFO - Found 0 citekeys in bib section 0
+[98] bbl.pm:660> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[98] bbl.pm:763> INFO - Output to main.bbl
+[98] Biber.pm:131> WARN - The file 'main.bcf' does not contain any citations!
+[98] Biber.pm:133> INFO - WARNINGS: 1

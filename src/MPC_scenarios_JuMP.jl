@@ -38,9 +38,11 @@ function define_scenario01A()
     lambda = lambda_F
 
     # ODE rhs:
-    ffun = system_equations_w_cum_CO2
+    #ffun = system_equations_w_cum_CO2
+    ffun = system_equations_sys_id_w_cum_CO2
     # Output equations
-    hfun = output_equations
+    #hfun = output_equations
+    hfun = output_equations_sys_id_detailed
 
     x0 = [2.63; 0.3; 0.3; 0.0; 0.0] # Initial state
 
