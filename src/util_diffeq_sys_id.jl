@@ -402,13 +402,13 @@ callback_opt_02 = (θ, loss) -> begin
     push!(loss_history, loss)
     
     # Print every 10 iterations
-    if length(loss_history) % 2 == 0
+    if length(loss_history) % 5 == 0
         println("Iter $(length(loss_history)): loss = $loss")
     end
     
-    # Early stopping: stop if loss hasn't improved in 50 iters
+    # Early stopping: stop if loss hasn't improved in 10 iters
     if length(loss_history) > 50
-        recent_improvement = loss_history[end-50] - loss
+        recent_improvement = loss_history[end-10] - loss
         if recent_improvement < 1e-4
             println("Early stopping at iter $(length(loss_history))")
             return true  # stop optimizer

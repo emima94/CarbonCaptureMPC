@@ -60,29 +60,37 @@ loss_history = Float64[]
 # Optimizer settings
 ad_type = Optimization.AutoForwardDiff()
 
+# Optimization function
+optf = Optimization.OptimizationFunction((θ, _) -> loss(θ, datasets_train, prob_list, sensealg, p_fixed), ad_type)
+
 # Step 1: Adam optimizer
-optimizer_adam = OptimizationOptimisers.ADAM(0.02)
-optf_adam = Optimization.OptimizationFunction((θ, _) -> loss(θ, datasets_train, prob_list, sensealg, p_fixed), ad_type)
-prob_adam = Optimization.OptimizationProblem(optf_adam, θ0)
+optimizer_adam = OptimizationOptimisers.ADAM(0.05)
+prob_adam = Optimization.OptimizationProblem(optf, θ0)
 
 println("\nStep 1: Optimizing with ADAM...")
 result_adam = Optimization.solve(prob_adam, optimizer_adam;
-    maxiters = 200,
+    maxiters = 500,
     callback = callback_opt_02)
 
 adam_iters = length(loss_history)
 
 # Step 2: LBFGS optimizer
-optimizer_lbfgs = 
+optimizer_lbfgs = OptimizationOptimJL.LBFGS(
+    linesearch = LineSearches.BackTracking()
+)
+prob_lbfgs = Optimization.OptimizationProblem(optf, result_adam.u)
 
-step_size = 0.02
-optimizer = OptimizationOptimisers.ADAM(step_size)
-
-optf = Optimization.OptimizationFunction((θ, _) -> loss(θ, datasets_train, prob_list, sensealg, p_fixed), ad_type)
-prob = Optimization.OptimizationProblem(optf, θ0)
-
-println("\nOptimizing...")
-result = Optimization.solve(prob, optimizer;
-    maxiters = 200,
+println("\nStep 2: LBFGS...")
+result_lbfgs = Optimization.solve(prob_lbfgs, optimizer_lbfgs;
+    maxiters = 100,
     callback = callback_opt_02)
+
+sol = result_lbfgs.u
+p_opt = NamedTuple(sol.p)
+x0_opt = copy.(sol.x0)
+
+# Save results
+time_str = Dates.format(Dates.now(), "yyyy-mm-dd_HH-MM-SS")
+@save "results/sys_id_diffeq_MSE_results_$time_str.jld2" p_opt x0_opt
+
 

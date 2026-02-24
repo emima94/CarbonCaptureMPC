@@ -90,7 +90,7 @@ loss_history = Float64[]
 optf = Optimization.OptimizationFunction((θ, _) -> NLL_aggregate(θ, datasets_train, prob_list, sensealg, p_fixed), ad_type)
 
 # Step 1: Adam optimizer
-optimizer_adam = OptimizationOptimisers.ADAM(0.02)
+optimizer_adam = OptimizationOptimisers.ADAM(0.05)
 prob_adam = Optimization.OptimizationProblem(optf, θ0)
 
 println("Step 1: ADAM...")
